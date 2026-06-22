@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<title>Ranking do Campeonato</title>
+
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    max-width: 600px;
+    margin: 40px auto;
+    background: #f4f6f8;
+  }
+
+  h1 {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+
+  .box {
+    background: white;
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+
+  input {
+    width: 100%;
+    padding: 10px;
+    margin: 5px 0;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+  }
+
+  ul {
+    padding: 0;
+    margin-top: 20px;
+  }
+
+  li {
+    list-style: none;
+    margin: 8px 0;
+    padding: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-radius: 10px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+
+    /* ✨ animação de entrada */
+    animation: fadeIn 0.25s ease-in;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .info {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    width: 100%;
+  }
+
+  .pos {
+    width: 90px;
+    font-weight: bold;
+  }
+
+  .name {
+    flex: 1;
+  }
+
+  .pts {
+    width: 80px;
+    text-align: right;
+  }
+
+  /* 🏆 cores */
+  .gold {
+    background: linear-gradient(90deg, #ffe066, #fff3b0);
+    border-left: 6px solid #d4af37;
+  }
+
+  .silver { background: #f1f3f5; }
+  .bronze { background: #ffd8a8; }
+
+  .fourth { background: #d0ebff; }
+  .fifth { background: #d3f9d8; }
+  .sixth { background: #e9ecef; }
+
+  /* 🏆 destaque do líder */
+  .leader {
+    border: 2px solid #d4af37;
+    transform: scale(1.02);
+  }
+
+  .remove { background: #ff4d4d; color: white; }
+  .plus { background: #2ecc71; color: white; }
+  .minus { background: #f39c12; color: white; }
+</style>
+</head>
+
+<body>
+
+<h1>🏆 Ranking do Campeonato</h1>
+
+<div class="box">
+  <input id="nome" placeholder="Nome do time">
+  <input id="pontos" type="number" placeholder="Pontos">
+
+  <button onclick="adicionar()">Adicionar</button>
+</div>
+
+<ul id="lista"></ul>
+
+<script>
+let times = JSON.parse(localStorage.getItem("times")) || [];
+
+function salvar() {
+  localStorage.setItem("times", JSON.stringify(times));
+}
+
+function adicionar() {
+  const nome = document.getElementById("nome").value;
+  const pontos = document.getElementById("pontos").value;
+
+  if (!nome || !pontos) return;
+
+  times.push({ nome, pontos: Number(pontos) });
+
+  salvar();
+  renderizar();
+
+  document.getElementById("nome").value = "";
+  document.getElementById("pontos").value = "";
+}
+
+function remover(i) {
+  times.splice(i, 1);
+  salvar();
+  renderizar();
+}
+
+function aumentar(i) {
+  times[i].pontos++;
+  salvar();
+  renderizar();
+}
+
+function diminuir(i) {
+  times[i].pontos--;
+  salvar();
+  renderizar();
+}
+
+function renderizar() {
+  const lista = document.getElementById("lista");
+  lista.innerHTML = "";
+
+  times.sort((a, b) => b.pontos - a.pontos);
+
+  for (let i = 0; i < times.length; i++) {
+
+    let medalha = "";
+    let classe = "";
+
+    if (i === 0) {
+      medalha = "🥇 ";
+      classe = "gold leader";
+    } else if (i === 1) {
+      medalha = "🥈 ";
+      classe = "silver";
+    } else if (i === 2) {
+      medalha = "🥉 ";
+      classe = "bronze";
+    } else if (i === 3) {
+      classe = "fourth";
+    } else if (i === 4) {
+      classe = "fifth";
+    } else if (i === 5) {
+      classe = "sixth";
+    }
+
+    lista.innerHTML += `
+      <li class="${classe}">
+        <div class="info">
+          <div class="pos">${medalha}${i + 1}º</div>
+          <div class="name">${times[i].nome}</div>
+          <div class="pts">${times[i].pontos} pts</div>
+
+          <button class="plus" onclick="aumentar(${i})">+</button>
+          <button class="minus" onclick="diminuir(${i})">-</button>
+        </div>
+
+        <button class="remove" onclick="remover(${i})">X</button>
+      </li>
+    `;
+  }
+}
+
+renderizar();
+</script>
+
+</body>
+</html>
