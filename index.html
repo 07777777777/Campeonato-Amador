@@ -1,236 +1,877 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-<meta charset="UTF-8">
-<title>Campeonato Profissional</title>
-
-<style>
-body {
-  font-family: Arial, sans-serif;
-  background: #0d0d0d;
-  color: white;
-  text-align: center;
-  padding: 20px;
-}
-
-h1 {
-  color: #00e676;
-}
-
-input {
-  padding: 10px;
-  width: 220px;
-  border: none;
-  border-radius: 6px;
-}
-
-button {
-  padding: 7px 10px;
-  margin: 3px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: bold;
-}
-
-.add { background:#00c853; color:white; }
-.win { background:#2196f3; color:white; }
-.draw { background:#ffb300; color:black; }
-.reset { background:#e53935; color:white; }
-
-table {
-  margin: 20px auto;
-  width: 1000px;
-  border-collapse: collapse;
-  background: #1c1c1c;
-  border-radius: 10px;
-  overflow: hidden;
-}
-
-th {
-  background:#00c853;
-  color:black;
-  padding:10px;
-}
-
-td {
-  padding:10px;
-  border-bottom:1px solid #333;
-}
-
-.match {
-  background:#222;
-  width:700px;
-  margin:10px auto;
-  padding:10px;
-  border-radius:8px;
-}
-</style>
-
-</head>
-
-<body>
-
-<h1>Campeonato Profissional</h1>
-
-<input id="teamInput" placeholder="Nome do time">
-<button class="add" onclick="addTeam()">Adicionar</button>
-<button class="reset" onclick="reset()">Resetar Campeonato</button>
-
-<h2>Jogos</h2>
-<div id="matches"></div>
-
-<h2>Tabela</h2>
-
-<table>
-<thead>
-<tr>
-<th>Pos</th>
-<th>Time</th>
-<th>P</th>
-<th>V</th>
-<th>E</th>
-<th>D</th>
-<th>GP</th>
-<th>GC</th>
-<th>SG</th>
-</tr>
-</thead>
-<tbody id="table"></tbody>
-</table>
-
-<script>
-let data = load();
-
-let teams = data.teams || [];
-let matches = data.matches || [];
-
-function addTeam() {
-  const input = document.getElementById("teamInput");
-  const name = input.value.trim();
-  if (!name) return;
-
-  teams.push({
-    name,
-    p:0, v:0, e:0, d:0,
-    gp:0, gc:0
-  });
-
-  input.value = "";
-  generateMatches();
-  save();
-  render();
-}
-
-function generateMatches() {
-  matches = [];
-
-  for (let i=0;i<teams.length;i++){
-    for (let j=0;j<teams.length;j++){
-      if (i !== j){
-        matches.push({a:i,b:j,played:false});
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      http-equiv="Cache-Control"
+      content="no-cache, no-store, must-revalidate"
+    />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <title>Campeonato Profissional v1.5</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: Arial, sans-serif;
       }
-    }
-  }
-}
+      body {
+        background-color: #f0f4f8;
+        color: #333;
+        padding: 15px;
+      }
+      .container {
+        max-width: 1100px;
+        margin: 0 auto;
+      }
+      header {
+        text-align: center;
+        margin-bottom: 25px;
+      }
+      header h1 {
+        color: #0d47a1;
+        margin-bottom: 5px;
+      }
+      header p {
+        color: #455a64;
+        font-size: 15px;
+      }
 
-function play(i, res){
-  const m = matches[i];
+      .barra-ferramentas {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        justify-content: center;
+        margin-bottom: 20px;
+        padding: 15px;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      }
 
-  if (res === "a"){
-    teams[m.a].v++; teams[m.a].p+=3;
-    teams[m.b].d++;
-    teams[m.a].gp++; teams[m.b].gc++;
-  }
+      .bloco {
+        background: white;
+        padding: 22px;
+        margin-bottom: 20px;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      }
 
-  if (res === "b"){
-    teams[m.b].v++; teams[m.b].p+=3;
-    teams[m.a].d++;
-    teams[m.b].gp++; teams[m.a].gc++;
-  }
+      h2 {
+        color: #1565c0;
+        margin-bottom: 15px;
+        padding-bottom: 8px;
+        border-bottom: 2px solid #e3f2fd;
+      }
+      .linha-form {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-bottom: 15px;
+        align-items: center;
+      }
+      input,
+      select,
+      button,
+      textarea {
+        padding: 12px;
+        border: 1px solid #cfd8dc;
+        border-radius: 6px;
+        font-size: 15px;
+      }
 
-  if (res === "e"){
-    teams[m.a].e++; teams[m.b].e++;
-    teams[m.a].p++; teams[m.b].p++;
-  }
+      button {
+        background-color: #2e7d32;
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-weight: bold;
+        transition: background 0.2s;
+      }
+      button:hover {
+        background-color: #27652a;
+      }
+      .btn-azul {
+        background-color: #1976d2;
+      }
+      .btn-azul:hover {
+        background-color: #1565c0;
+      }
+      .btn-laranja {
+        background-color: #f57c00;
+      }
+      .btn-laranja:hover {
+        background-color: #ef6c00;
+      }
+      .btn-vermelho {
+        background-color: #d32f2f;
+      }
+      .btn-vermelho:hover {
+        background-color: #c62828;
+      }
+      .btn-pequeno {
+        padding: 7px 12px;
+        font-size: 14px;
+        margin: 0 3px;
+      }
 
-  m.played = true;
+      .form-jogo {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .form-jogo input {
+        width: 65px;
+        text-align: center;
+      }
 
-  save();
-  render();
-}
+      .filtros-turno {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        margin-bottom: 15px;
+        flex-wrap: wrap;
+      }
 
-function renderMatches(){
-  const div = document.getElementById("matches");
-  div.innerHTML = "";
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 12px;
+      }
+      th,
+      td {
+        padding: 12px 8px;
+        text-align: center;
+        border-bottom: 1px solid #eceff1;
+        font-size: 14px;
+      }
+      th {
+        background-color: #1976d2;
+        color: white;
+        font-weight: 600;
+      }
+      tr:nth-child(even) {
+        background-color: #f8fafc;
+      }
+      tr:hover {
+        background-color: #f1f8ff;
+      }
 
-  matches.forEach((m,i)=>{
-    if (m.played) return;
+      .item-time {
+        padding: 10px;
+        margin: 6px 0;
+        background: #e8f0fe;
+        border-radius: 6px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
 
-    const el = document.createElement("div");
-    el.className="match";
+      .item-jogo {
+        padding: 14px;
+        margin: 8px 0;
+        background: #f8fafc;
+        border-radius: 8px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+      }
+      .info-jogo {
+        font-size: 18px;
+        font-weight: 500;
+      }
 
-    el.innerHTML = `
-      ${teams[m.a].name} vs ${teams[m.b].name}<br><br>
-      <button class="win" onclick="play(${i},'a')">${teams[m.a].name}</button>
-      <button class="draw" onclick="play(${i},'e')">Empate</button>
-      <button class="win" onclick="play(${i},'b')">${teams[m.b].name}</button>
-    `;
+      .etiqueta-turno {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 13px;
+        font-weight: bold;
+        margin-left: 8px;
+      }
+      .turno1 {
+        background: #c8e6c9;
+        color: #2e7d32;
+      }
+      .turno2 {
+        background: #bbdefb;
+        color: #1565c0;
+      }
 
-    div.appendChild(el);
-  });
-}
+      #mensagem {
+        margin: 12px 0;
+        padding: 12px;
+        border-radius: 6px;
+        font-weight: bold;
+        display: none;
+      }
+      .sucesso {
+        background: #e6f9e9;
+        color: #2e7d32;
+        display: block;
+      }
+      .erro {
+        background: #fdecea;
+        color: #d32f2f;
+        display: block;
+      }
+      .aviso {
+        background: #fff8e1;
+        color: #f57c00;
+        display: block;
+      }
 
-function renderTable(){
-  const t = document.getElementById("table");
-  t.innerHTML="";
+      .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.55);
+        justify-content: center;
+        align-items: center;
+        z-index: 999;
+      }
+      .modal-conteudo {
+        background: white;
+        padding: 28px;
+        border-radius: 12px;
+        width: 92%;
+        max-width: 450px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+      }
+      .botoes-modal {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+        margin-top: 22px;
+      }
+      .dica {
+        font-size: 13px;
+        color: #607d8b;
+        margin-top: 6px;
+        line-height: 1.5;
+      }
 
-  let sorted = [...teams].sort((a,b)=>
-    b.p - a.p || (b.gp-b.gc) - (a.gp-a.gc)
-  );
+      @media (max-width: 768px) {
+        .linha-form,
+        .form-jogo,
+        .filtros-turno {
+          flex-direction: column;
+          align-items: stretch;
+        }
+        .form-jogo input {
+          width: 100%;
+        }
+        table {
+          display: block;
+          overflow-x: auto;
+        }
+        .item-jogo {
+          flex-direction: column;
+          text-align: center;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>🏆 Campeonato Profissional v1.5</h1>
+        <p>
+          Gerenciamento completo • Turno e Returno • Classificação Automática
+        </p>
+      </header>
 
-  sorted.forEach((x,i)=>{
-    const row=document.createElement("tr");
+      <div class="barra-ferramentas">
+        <button onclick="exportarDados()">📤 Salvar / Exportar</button>
+        <button onclick="abrirModalImportar()">📥 Carregar / Importar</button>
+        <button class="btn-laranja" onclick="abrirModalEditarCampeonato()">
+          ⚙️ Dados do Campeonato
+        </button>
+        <button class="btn-vermelho" onclick="zerarTudo()">
+          🗑️ Zerar Tudo
+        </button>
+      </div>
 
-    row.innerHTML=`
-      <td>${i+1}</td>
-      <td>${x.name}</td>
-      <td>${x.p}</td>
-      <td>${x.v}</td>
-      <td>${x.e}</td>
-      <td>${x.d}</td>
-      <td>${x.gp}</td>
-      <td>${x.gc}</td>
-      <td>${x.gp-x.gc}</td>
-    `;
+      <div id="mensagem"></div>
 
-    t.appendChild(row);
-  });
-}
+      <section class="bloco">
+        <h2>Cadastrar Novo Time</h2>
+        <div class="linha-form">
+          <input
+            type="text"
+            id="nomeTime"
+            placeholder="Nome completo do time"
+            required
+            style="flex: 1; min-width: 220px"
+          />
+          <button onclick="cadastrarTime()">Cadastrar Time</button>
+        </div>
+        <div id="listaTimesCadastrados"></div>
+      </section>
 
-function render(){
-  renderMatches();
-  renderTable();
-}
+      <section class="bloco">
+        <h2>Registrar Resultado de Partida</h2>
+        <div class="form-jogo">
+          <select id="timeCasa">
+            <option value="">Selecione</option>
+          </select>
+          <input type="number" id="golsCasa" min="0" placeholder="0" />
+          <span style="font-size: 20px; font-weight: bold">X</span>
+          <input type="number" id="golsFora" min="0" placeholder="0" />
+          <select id="timeFora">
+            <option value="">Selecione</option>
+          </select>
+          <select id="turnoJogo">
+            <option value="1">1º Turno</option>
+            <option value="2">2º Turno</option>
+          </select>
+        </div>
+        <button
+          onclick="registrarPartida()"
+          class="btn-azul"
+          style="width: 100%; margin-top: 12px"
+        >
+          Registrar Resultado
+        </button>
+      </section>
 
-function save(){
-  localStorage.setItem("proChamp", JSON.stringify({teams,matches}));
-}
+      <section class="bloco">
+        <h2>Tabela de Classificação</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Pos</th>
+              <th>Time</th>
+              <th>Pts</th>
+              <th>J</th>
+              <th>V</th>
+              <th>E</th>
+              <th>D</th>
+              <th>GP</th>
+              <th>GC</th>
+              <th>SG</th>
+              <th>Gols Fora</th>
+            </tr>
+          </thead>
+          <tbody id="corpoTabela"></tbody>
+        </table>
+        <p class="dica">
+          <strong>Critérios de desempate:</strong> 1) Pontos 2) Vitórias 3)
+          Saldo de gols 4) Gols marcados 5) Gols fora de casa
+        </p>
+      </section>
 
-function load(){
-  const d = localStorage.getItem("proChamp");
-  return d ? JSON.parse(d) : {teams:[],matches:[]};
-}
+      <section class="bloco">
+        <h2>Partidas Registradas</h2>
+        <div class="filtros-turno">
+          <strong>Filtrar por:</strong>
+          <select id="filtroTurno" onchange="atualizarListaPartidas()">
+            <option value="todos">Todas as partidas</option>
+            <option value="1">Somente 1º Turno</option>
+            <option value="2">Somente 2º Turno</option>
+          </select>
+          <button onclick="ordenarPartidas()">↻ Reordenar</button>
+        </div>
+        <div id="listaPartidas"></div>
+      </section>
+    </div>
 
-function reset(){
-  teams=[];
-  matches=[];
-  save();
-  render();
-}
+    <!-- Modal Editar Partida -->
+    <div class="modal" id="modalEditarPartida">
+      <div class="modal-conteudo">
+        <h3>Editar Resultado</h3>
+        <input type="hidden" id="indiceEditar" />
+        <div class="form-jogo" style="margin-top: 18px">
+          <input
+            type="text"
+            id="editarNomeCasa"
+            readonly
+            style="background: #f5f5f5"
+          />
+          <input type="number" id="editarGolsCasa" min="0" />
+          <span>X</span>
+          <input type="number" id="editarGolsFora" min="0" />
+          <input
+            type="text"
+            id="editarNomeFora"
+            readonly
+            style="background: #f5f5f5"
+          />
+        </div>
+        <div class="botoes-modal">
+          <button onclick="fecharTodosModais()">Cancelar</button>
+          <button onclick="salvarEdicao()">Salvar Alterações</button>
+        </div>
+      </div>
+    </div>
 
-render();
-</script>
+    <!-- Modal Importar -->
+    <div class="modal" id="modalImportar">
+      <div class="modal-conteudo">
+        <h3>Importar Dados Salvos</h3>
+        <p style="margin: 12px 0; color: #546e7a">
+          Cole o conteúdo exportado anteriormente:
+        </p>
+        <textarea
+          id="dadosImportar"
+          rows="6"
+          placeholder="Cole os dados aqui..."
+        ></textarea>
+        <div class="botoes-modal">
+          <button onclick="fecharTodosModais()">Cancelar</button>
+          <button onclick="confirmarImportacao()">Importar</button>
+        </div>
+      </div>
+    </div>
 
-</body>
+    <!-- Modal Dados Campeonato -->
+    <div class="modal" id="modalCampeonato">
+      <div class="modal-conteudo">
+        <h3>Dados do Campeonato</h3>
+        <div class="linha-form" style="margin-top: 15px">
+          <input
+            type="text"
+            id="nomeCampeonato"
+            placeholder="Nome do Campeonato"
+            style="flex: 1"
+          />
+        </div>
+        <div class="linha-form">
+          <input
+            type="text"
+            id="edicaoCampeonato"
+            placeholder="Ex: Edição 2026"
+            style="flex: 1"
+          />
+        </div>
+        <div class="botoes-modal">
+          <button onclick="fecharTodosModais()">Cancelar</button>
+          <button onclick="salvarDadosCampeonato()">Salvar</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      let configuracao = {
+        nome: "Campeonato Profissional v1.5",
+        edicao: "2026",
+      };
+      let times = [];
+      let partidas = [];
+
+      const CHAVE_CONFIG = "config_v15";
+      const CHAVE_TIMES = "times_v15";
+      const CHAVE_PARTIDAS = "partidas_v15";
+
+      function iniciarSistema() {
+        const cfgSalva = localStorage.getItem(CHAVE_CONFIG);
+        const timesSalvos = localStorage.getItem(CHAVE_TIMES);
+        const partidasSalvas = localStorage.getItem(CHAVE_PARTIDAS);
+
+        if (cfgSalva) configuracao = JSON.parse(cfgSalva);
+        if (timesSalvos) times = JSON.parse(timesSalvos);
+        if (partidasSalvas) partidas = JSON.parse(partidasSalvas);
+
+        atualizarTudo();
+        document.querySelector("header h1").textContent = configuracao.nome;
+      }
+
+      function salvarTodosDados() {
+        localStorage.setItem(CHAVE_CONFIG, JSON.stringify(configuracao));
+        localStorage.setItem(CHAVE_TIMES, JSON.stringify(times));
+        localStorage.setItem(CHAVE_PARTIDAS, JSON.stringify(partidas));
+      }
+
+      function mostrarMensagem(texto, tipo) {
+        const el = document.getElementById("mensagem");
+        el.textContent = texto;
+        el.className = tipo;
+        setTimeout(() => (el.className = ""), 6000);
+      }
+
+      function cadastrarTime() {
+        const nome = document.getElementById("nomeTime").value.trim();
+
+        if (!nome) return mostrarMensagem("Informe o nome do time!", "erro");
+        if (times.find((t) => t.nome === nome))
+          return mostrarMensagem("Esse time já está cadastrado!", "erro");
+
+        times.push({
+          nome,
+          pontos: 0,
+          jogos: 0,
+          vitorias: 0,
+          empates: 0,
+          derrotas: 0,
+          golsPro: 0,
+          golsContra: 0,
+          golsFora: 0,
+        });
+
+        document.getElementById("nomeTime").value = "";
+        salvarTodosDados();
+        atualizarTudo();
+        mostrarMensagem("Time cadastrado com sucesso!", "sucesso");
+      }
+
+      function removerTime(nome) {
+        if (
+          !confirm(
+            `Remover o time "${nome}"? Todas as partidas e estatísticas serão apagadas.`,
+          )
+        )
+          return;
+        times = times.filter((t) => t.nome !== nome);
+        partidas = partidas.filter(
+          (p) => p.timeCasa !== nome && p.timeFora !== nome,
+        );
+        recalcularTodasEstatisticas();
+        salvarTodosDados();
+        atualizarTudo();
+        mostrarMensagem("Time removido!", "sucesso");
+      }
+
+      function registrarPartida() {
+        const timeCasa = document.getElementById("timeCasa").value;
+        const golsCasa = Number(document.getElementById("golsCasa").value);
+        const timeFora = document.getElementById("timeFora").value;
+        const golsFora = Number(document.getElementById("golsFora").value);
+        const turno = Number(document.getElementById("turnoJogo").value);
+
+        if (!timeCasa || !timeFora)
+          return mostrarMensagem("Selecione os dois times!", "erro");
+        if (timeCasa === timeFora)
+          return mostrarMensagem(
+            "Não pode escolher o mesmo time duas vezes!",
+            "erro",
+          );
+        if (isNaN(golsCasa) || isNaN(golsFora) || golsCasa < 0 || golsFora < 0)
+          return mostrarMensagem("Valores de gols inválidos!", "erro");
+
+        const existe = partidas.find(
+          (p) =>
+            (p.timeCasa === timeCasa && p.timeFora === timeFora) ||
+            (p.timeCasa === timeFora && p.timeFora === timeCasa),
+        );
+        if (existe)
+          return mostrarMensagem("Esse confronto já foi registrado!", "erro");
+
+        partidas.push({ timeCasa, golsCasa, timeFora, golsFora, turno });
+        recalcularTodasEstatisticas();
+
+        document.getElementById("golsCasa").value = "";
+        document.getElementById("golsFora").value = "";
+        salvarTodosDados();
+        atualizarTudo();
+        mostrarMensagem("Partida registrada com sucesso!", "sucesso");
+      }
+
+      function recalcularTodasEstatisticas() {
+        times.forEach((t) => {
+          t.pontos =
+            t.jogos =
+            t.vitorias =
+            t.empates =
+            t.derrotas =
+            t.golsPro =
+            t.golsContra =
+            t.golsFora =
+              0;
+        });
+
+        partidas.forEach((p) => {
+          const tc = times.find((t) => t.nome === p.timeCasa);
+          const tf = times.find((t) => t.nome === p.timeFora);
+          if (!tc || !tf) return;
+
+          tc.jogos++;
+          tf.jogos++;
+          tc.golsPro += p.golsCasa;
+          tc.golsContra += p.golsFora;
+          tf.golsPro += p.golsFora;
+          tf.golsContra += p.golsCasa;
+          tf.golsFora += p.golsFora;
+
+          if (p.golsCasa > p.golsFora) {
+            tc.vitorias++;
+            tc.pontos += 3;
+            tf.derrotas++;
+          } else if (p.golsCasa < p.golsFora) {
+            tf.vitorias++;
+            tf.pontos += 3;
+            tc.derrotas++;
+          } else {
+            tc.empates++;
+            tc.pontos += 1;
+            tf.empates++;
+            tf.pontos += 1;
+          }
+        });
+      }
+
+      function abrirEdicao(indice) {
+        const p = partidas[indice];
+        document.getElementById("indiceEditar").value = indice;
+        document.getElementById("editarNomeCasa").value = p.timeCasa;
+        document.getElementById("editarGolsCasa").value = p.golsCasa;
+        document.getElementById("editarGolsFora").value = p.golsFora;
+        document.getElementById("editarNomeFora").value = p.timeFora;
+        document.getElementById("modalEditarPartida").style.display = "flex";
+      }
+
+      function salvarEdicao() {
+        const indice = Number(document.getElementById("indiceEditar").value);
+        const novoGC = Number(document.getElementById("editarGolsCasa").value);
+        const novoGF = Number(document.getElementById("editarGolsFora").value);
+
+        if (isNaN(novoGC) || isNaN(novoGF) || novoGC < 0 || novoGF < 0)
+          return mostrarMensagem("Valores inválidos!", "erro");
+
+        partidas[indice].golsCasa = novoGC;
+        partidas[indice].golsFora = novoGF;
+        recalcularTodasEstatisticas();
+        fecharTodosModais();
+        salvarTodosDados();
+        atualizarTudo();
+        mostrarMensagem("Resultado atualizado!", "sucesso");
+      }
+
+      function excluirPartida(indice) {
+        if (
+          !confirm(
+            "Excluir essa partida? As estatísticas serão recalculadas automaticamente.",
+          )
+        )
+          return;
+        partidas.splice(indice, 1);
+        recalcularTodasEstatisticas();
+        salvarTodosDados();
+        atualizarTudo();
+        mostrarMensagem("Partida excluída!", "sucesso");
+      }
+
+      function classificarTimes() {
+        return [...times].sort((a, b) => {
+          if (b.pontos !== a.pontos) return b.pontos - a.pontos;
+          if (b.vitorias !== a.vitorias) return b.vitorias - a.vitorias;
+          const saldoA = a.golsPro - a.golsContra;
+          const saldoB = b.golsPro - b.golsContra;
+          if (saldoB !== saldoA) return saldoB - saldoA;
+          if (b.golsPro !== a.golsPro) return b.golsPro - a.golsPro;
+          return b.golsFora - a.golsFora;
+        });
+      }
+
+      function atualizarTabela() {
+        const corpo = document.getElementById("corpoTabela");
+        corpo.innerHTML = "";
+        const ordem = classificarTimes();
+
+        ordem.forEach((t, pos) => {
+          const saldo = t.golsPro - t.golsContra;
+          const linha = document.createElement("tr");
+          linha.innerHTML = `
+                    <td>${pos + 1}º</td>
+                    <td><strong>${t.nome}</strong></td>
+                    <td><strong>${t.pontos}</strong></td>
+                    <td>${t.jogos}</td>
+                    <td>${t.vitorias}</td>
+                    <td>${t.empates}</td>
+                    <td>${t.derrotas}</td>
+                    <td>${t.golsPro}</td>
+                    <td>${t.golsContra}</td>
+                    <td>${saldo >= 0 ? "+" : ""}${saldo}</td>
+                    <td>${t.golsFora}</td>
+                `;
+          corpo.appendChild(linha);
+        });
+      }
+
+      function atualizarSeletores() {
+        const sc = document.getElementById("timeCasa");
+        const sf = document.getElementById("timeFora");
+        sc.innerHTML = '<option value="">Selecione</option>';
+        sf.innerHTML = '<option value="">Selecione</option>';
+        times.forEach((t) => {
+          sc.innerHTML += `<option value="${t.nome}">${t.nome}</option>`;
+          sf.innerHTML += `<option value="${t.nome}">${t.nome}</option>`;
+        });
+      }
+
+      function atualizarListaTimes() {
+        const lista = document.getElementById("listaTimesCadastrados");
+        lista.innerHTML =
+          times.length === 0
+            ? '<p style="color:#78909c; margin-top:8px;">Nenhum time cadastrado ainda.</p>'
+            : '<h4 style="margin-bottom:8px;">Times cadastrados:</h4>';
+        times.forEach((t) => {
+          lista.innerHTML += `
+                    <div class="item-time">
+                        <span>${t.nome}</span>
+                        <button class="btn-pequeno btn-vermelho" onclick="removerTime('${t.nome}')">Remover</button>
+                    </div>
+                `;
+        });
+      }
+
+      function atualizarListaPartidas() {
+        const lista = document.getElementById("listaPartidas");
+        const filtro = document.getElementById("filtroTurno").value;
+        lista.innerHTML = "";
+
+        const filtradas =
+          filtro === "todos"
+            ? partidas
+            : partidas.filter((p) => p.turno === Number(filtro));
+
+        if (filtradas.length === 0) {
+          lista.innerHTML =
+            '<p style="text-align:center; color:#78909c; padding:20px;">Nenhuma partida registrada.</p>';
+          return;
+        }
+
+        filtradas.forEach((p, indiceReal) => {
+          const indiceOriginal = partidas.indexOf(p);
+          lista.innerHTML += `
+                    <div class="item-jogo">
+                        <div class="info-jogo">
+                            ${p.timeCasa} <strong>${p.golsCasa} X ${p.golsFora}</strong> ${p.timeFora}
+                            <span class="etiqueta-turno ${p.turno === 1 ? "turno1" : "turno2"}">${p.turno}º Turno</span>
+                        </div>
+                        <div>
+                            <button class="btn-pequeno btn-laranja" onclick="abrirEdicao(${indiceOriginal})">Editar</button>
+                            <button class="btn-pequeno btn-vermelho" onclick="excluirPartida(${indiceOriginal})">Excluir</button>
+                        </div>
+                    </div>
+                `;
+        });
+      }
+
+      function ordenarPartidas() {
+        partidas.reverse();
+        salvarTodosDados();
+        atualizarListaPartidas();
+        mostrarMensagem("Lista reordenada!", "aviso");
+      }
+
+      function exportarDados() {
+        const dados = JSON.stringify(
+          { versao: "v1.5", configuracao, times, partidas },
+          null,
+          2,
+        );
+        navigator.clipboard.writeText(dados);
+        const arquivo = new Blob([dados], { type: "application/json" });
+        const url = URL.createObjectURL(arquivo);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `Campeonato_v1.5_${new Date().toLocaleDateString("pt-BR").replace(/\//g, "-")}.json`;
+        link.click();
+        URL.revokeObjectURL(url);
+        mostrarMensagem("Dados copiados e baixados com sucesso!", "sucesso");
+      }
+
+      function abrirModalImportar() {
+        document.getElementById("dadosImportar").value = "";
+        document.getElementById("modalImportar").style.display = "flex";
+      }
+
+      function confirmarImportacao() {
+        const texto = document.getElementById("dadosImportar").value.trim();
+        if (!texto)
+          return mostrarMensagem("Cole os dados para importar!", "erro");
+
+        try {
+          const dados = JSON.parse(texto);
+          if (!dados.times || !dados.partidas)
+            throw new Error("Estrutura inválida");
+          if (
+            !confirm(
+              "Isso substituirá todos os dados atuais da v1.5. Deseja continuar?",
+            )
+          )
+            return;
+
+          configuracao = dados.configuracao || {
+            nome: "Campeonato Profissional v1.5",
+            edicao: "2026",
+          };
+          times = dados.times;
+          partidas = dados.partidas;
+          recalcularTodasEstatisticas();
+          fecharTodosModais();
+          salvarTodosDados();
+          atualizarTudo();
+          mostrarMensagem("Dados importados com sucesso!", "sucesso");
+        } catch (erro) {
+          mostrarMensagem("Arquivo ou dados inválidos!", "erro");
+        }
+      }
+
+      function abrirModalEditarCampeonato() {
+        document.getElementById("nomeCampeonato").value = configuracao.nome;
+        document.getElementById("edicaoCampeonato").value = configuracao.edicao;
+        document.getElementById("modalCampeonato").style.display = "flex";
+      }
+
+      function salvarDadosCampeonato() {
+        configuracao.nome =
+          document.getElementById("nomeCampeonato").value.trim() ||
+          "Campeonato Profissional v1.5";
+        configuracao.edicao =
+          document.getElementById("edicaoCampeonato").value.trim() || "2026";
+        document.querySelector("header h1").textContent = configuracao.nome;
+        fecharTodosModais();
+        salvarTodosDados();
+        mostrarMensagem("Dados atualizados!", "sucesso");
+      }
+
+      function zerarTudo() {
+        if (
+          !confirm(
+            "Apagar TODOS os dados da v1.5? Essa ação não pode ser desfeita!",
+          )
+        )
+          return;
+        if (
+          !confirm("Confirma novamente: deseja apagar tudo e começar do zero?")
+        )
+          return;
+        configuracao = { nome: "Campeonato Profissional v1.5", edicao: "2026" };
+        times = [];
+        partidas = [];
+        salvarTodosDados();
+        atualizarTudo();
+        mostrarMensagem("Sistema v1.5 zerado com sucesso!", "aviso");
+      }
+
+      function fecharTodosModais() {
+        document
+          .querySelectorAll(".modal")
+          .forEach((m) => (m.style.display = "none"));
+      }
+
+      function atualizarTudo() {
+        atualizarListaTimes();
+        atualizarSeletores();
+        atualizarTabela();
+        atualizarListaPartidas();
+      }
+
+      document.addEventListener("DOMContentLoaded", iniciarSistema);
+      document.querySelectorAll(".modal").forEach((m) => {
+        m.addEventListener("click", (e) => {
+          if (e.target === m) fecharTodosModais();
+        });
+      });
+    </script>
+  </body>
 </html>
